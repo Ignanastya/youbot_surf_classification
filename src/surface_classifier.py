@@ -112,8 +112,6 @@ class MedianModel:
         return self.func(direction)
 
 
-
-
 class Metric:
     def __init__(self, name, feature_name):
         self.name = name

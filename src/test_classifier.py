@@ -21,9 +21,9 @@ def task(df, cols, classifier, feature):
 
 
 if __name__ == '__main__':
-    feature = 'I_total'
+    feature = 'I_total_avg'
 
-    df = pd.read_csv(prepared_data / 'prep_rub_tracks_old.csv')
+    df = pd.read_csv(prepared_data / 'prep_all_tracks.csv')
 
     surfs = ['linoleum', 'grass', 'rubber_carpet', 'cell_carpet']
     num_of_coeffs = {s: 4 for s in surfs}
@@ -50,4 +50,4 @@ if __name__ == '__main__':
 
     export_path = classifPath
     export_path.mkdir(parents=True, exist_ok=True)
-    pd.concat(res, axis=0).to_csv(export_path / 'cls_results_3_05.csv', index=False)
+    pd.concat(res, axis=0).to_csv(export_path / 'cls_results_all_tracks.csv', index=False)

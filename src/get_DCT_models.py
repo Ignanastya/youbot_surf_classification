@@ -16,9 +16,10 @@ BASE_DIR = Path(__file__).resolve().parent
 prepared_data = Path(f"{BASE_DIR}/data/prepared")
 figures = Path(f"{BASE_DIR}/data/DCT")
 
+
 if __name__ == '__main__':
 
-    df = pd.read_csv(prepared_data / 'prep_experiment1.csv')
+    df = pd.read_csv(prepared_data / 'prep_new3_experiment1.csv')
 
     dct_models = {}
     dct_models_std = {}
@@ -29,7 +30,7 @@ if __name__ == '__main__':
             width=900,
             height=500,
             xaxis=dict(title='Угол движения, °'),
-            yaxis=dict(title='Суммарный ток по модулю, A'),
+            yaxis=dict(title='Суммарный ток приводов колес, A'),
         )
     )
 
@@ -37,7 +38,7 @@ if __name__ == '__main__':
         fig.add_trace(
             go.Scatter(
                 x=_df['angle_deg'],
-                y=_df['I_total'],
+                y=_df['I_total_mean'],
                 mode='lines',
                 line=dict(color=colors[surf], width=2),
                 name=surf,
@@ -48,12 +49,12 @@ if __name__ == '__main__':
     x = np.arange(-180, 176, 1)
     for idx, (surf, _df) in enumerate(df.groupby('surface')):
         dct = DCT(
-            data=_df['I_total'],
+            data=_df['I_total_mean'],
             cutoff_amount=2,
             range_width=355
         )
         dct_models[surf] = dct
-        dct_models_std[surf] = _df['I_std'].mean()
+        dct_models_std[surf] = _df['I_total_std'].mean()
 
         fig.add_trace(
             go.Scatter(

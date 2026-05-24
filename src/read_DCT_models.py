@@ -17,4 +17,5 @@ if __name__ == '__main__':
         models, models_std = pickle.load(file)
     
     for surf in surfs:
-        print(f'Surface: {surf}, DCT coeffs: {models[surf].coeffs}')
+        # print(f'Surface: {surf}, DCT coeffs: {models[surf].coeffs}')
+        print(f'Surface: {surf}, std: {models_std[surf]}')

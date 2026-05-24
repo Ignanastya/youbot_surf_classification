@@ -16,10 +16,9 @@ class MotionType(Enum):
     STRAIGHT = "straight"
     SQUARE = "square"
     HOURGLASS = "hourglass"
-    # CIRCLE = "circle"
-    # FIGURE_EIGHT = "figure_eight"
+    CIRCLE = "circle"
+    FIGURE_EIGHT = "figure_eight"
     # SPIN = "spin"
-    # ARC = "arc"
     # CIRCLE_WITH_SPIN = "circle_with_spin"
 
 def parse_args():
@@ -81,10 +80,6 @@ class RobotControl:
         self.rate = rospy.Rate(5)
 
         self.ANGLE = 0
-
-        # self.pub = rospy.Publisher('/youbot_base/mecanum_drive_controller/cmd_vel', Twist, queue_size=1)
-        # self.tx = tx
-        # self.ty = ty
 
     def callbackOdom(self, msg):
         self.odom = msg
@@ -190,7 +185,55 @@ class RobotControl:
         vy = math.sin(botCtrl.ANGLE) * velocity
         self.go(vx, vy, 0)
         return 0
-
+    
+    def move_circle(self, curr_time, velocity, radius, reverse):
+        # if reverse is True move clockwise else counter-clockwise
+        angle = curr_time * velocity / radius
+        if (angle < 2 * math.pi):
+            vx = math.cos(angle) * velocity * (-1 if reverse else 1)
+            vy = math.sin(angle) * velocity
+            self.go(vx, vy, 0)
+            botCtrl.ANGLE = math.atan2(vy, vx)
+            return 0
+        else:
+            return -1
+        
+    def move_eight(self, curr_time, velocity, radius, reverse):
+        # if reverse is True move clockwise else counter-clockwise
+        angle = curr_time * velocity / radius
+        if (angle < 2 * math.pi):
+            vx = math.cos(angle) * velocity * (-1 if reverse else 1)
+            vy = math.cos(2*angle) * velocity
+            self.go(vx, vy, 0)
+            botCtrl.ANGLE = math.atan2(vy, vx)
+            return 0
+        else:
+            return -1
+        
+    def move_spin(self, curr_time, velocity, mov_time, reverse):
+        if(curr_time <= mov_time):
+            if (reverse):
+                self.go(0, 0, -velocity)
+            else:
+                self.go(0, 0, velocity)
+            return 0
+        else:
+            return -1
+        
+    def move_circle_spin(self, curr_time, velocity, radius, reverse):
+        # if reverse is True move clockwise else counter-clockwise
+        angle = curr_time * velocity / radius
+        direction = -1 if reverse else 1
+        if (angle < 2 * math.pi):
+            vx = velocity * direction
+            wz = (velocity / radius) * direction
+            self.go(vx, 0, wz)
+            botCtrl.ANGLE = math.radians(-180) if reverse else 0
+            return 0
+        else:
+            return -1
+        
+        
 
 if __name__ == '__main__':
 
@@ -202,15 +245,15 @@ if __name__ == '__main__':
     MOTION_TYPE = args.motion_type
 
     if (MOTION_TYPE == "with_angle"):
-        botCtrl.ANGLE = math.radians(args.angle) # -0.52
+        botCtrl.ANGLE = math.radians(args.angle)
         REVERSE = False
     else:
         botCtrl.ANGLE = 0.0
         REVERSE = args.reverse
     SURFACE = args.surface
-    csv_name = args.csv # 'experiment_data_4.csv'
-    VELOCITY = args.velocity # 0.1
-    MOV_TIME = args.moving_time # 5 #(seconds)
+    csv_name = args.csv
+    VELOCITY = args.velocity
+    MOV_TIME = args.moving_time
 
     if not os.path.exists(f"{BASE_DIR}/data/raw/{csv_name}"):
         create_csv()
@@ -235,6 +278,14 @@ if __name__ == '__main__':
             res = botCtrl.move_square(curr_time, VELOCITY, MOV_TIME, REVERSE)
         elif (MOTION_TYPE == "hourglass"):
             res = botCtrl.move_hourglass(curr_time, VELOCITY, MOV_TIME, REVERSE)
+        elif (MOTION_TYPE == "circle"):
+            res = botCtrl.move_circle(curr_time, VELOCITY, MOV_TIME, REVERSE)
+        elif (MOTION_TYPE == "figure_eight"):
+            res = botCtrl.move_eight(curr_time, VELOCITY, MOV_TIME, REVERSE)
+        elif (MOTION_TYPE == "spin"):
+            res = botCtrl.move_spin(curr_time, VELOCITY, MOV_TIME, REVERSE)
+        elif (MOTION_TYPE == "circle_spin"):
+            res = botCtrl.move_circle_spin(curr_time, VELOCITY, MOV_TIME, REVERSE)
         else:
             print("Cannot find suitable motion_type!")
             break

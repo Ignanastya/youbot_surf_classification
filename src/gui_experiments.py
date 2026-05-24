@@ -71,36 +71,6 @@ class ArucoManager:
             pass
 
 
-# ======================================================
-# Teleop process manager
-# ======================================================
-# class TeleopManager:
-#     def __init__(self):
-#         self.proc = None
-
-#     def start(self):
-#         if self.proc is None:
-#             self.proc = subprocess.Popen(
-#                 [
-#                     'rosrun',
-#                     'teleop_twist_keyboard',
-#                     'teleop_twist_keyboard.py'
-#                 ],
-#                 stdin=subprocess.PIPE
-#             )
-
-#     def stop(self):
-#         if self.proc:
-#             self.proc.terminate()
-#             self.proc = None
-
-#     def __del__(self):
-#         try:
-#             self.stop()
-#         except Exception:
-#             pass
-
-
 class Mode:
     NONE = "NONE"
     RUNNING = "RUNNING"
@@ -152,43 +122,43 @@ class YoubotGUI(QMainWindow):
             "straight",
             "square",
             "hourglass",
-            # "With angle",
-            # "Straight/Back",
-            # "Square",
-            # "Hourglass",
-            # "Круг",
-            # "Восьмерка",
-            # "Вращение на месте",
-            # "Дуга",
-            # "Круг с вращением"
+            "circle",
+            "figure_eight",
+            "spin",
+            "circle_spin"
         ])
-        # self.motion_combo.currentIndexChanged.connect(self.update_motion_params)
-
+        self.motion_combo.currentIndexChanged.connect(self.update_params)
         grid.addWidget(self.motion_combo, 1, 1)
 
-        grid.addWidget(QLabel("Reverse movement:"), 2, 0)
+        self.reverse_title = QLabel("Reverse movement:")
+        grid.addWidget(self.reverse_title, 2, 0)
         self.reverse = QCheckBox()
         self.reverse.setChecked(False)
         grid.addWidget(self.reverse, 2, 1)
+        self.reverse.hide()
+        self.reverse_title.hide()
 
-        grid.addWidget(QLabel("Target angle (degrees):"), 3, 0)
+        self.angle_spin_title = QLabel("Target angle (degrees):")
+        grid.addWidget(self.angle_spin_title, 3, 0)
         self.angle_spin = QDoubleSpinBox()
         self.angle_spin.setRange(-180, 180)
         self.angle_spin.setSingleStep(5)
         self.angle_spin.setValue(0.0)
         grid.addWidget(self.angle_spin, 3, 1)
 
-        grid.addWidget(QLabel("Velocity (m/s):"), 4, 0)
+        self.vel_spin_title = QLabel("Velocity (m/s):")
+        grid.addWidget(self.vel_spin_title, 4, 0)
         self.vel_spin = QDoubleSpinBox()
-        self.vel_spin.setRange(0.01, 1.0)
-        self.vel_spin.setSingleStep(0.01)
-        self.vel_spin.setValue(0.1)
+        self.vel_spin.setRange(0.05, 1.0)
+        self.vel_spin.setSingleStep(0.05)
+        self.vel_spin.setValue(0.2)
         grid.addWidget(self.vel_spin, 4, 1)
 
-        grid.addWidget(QLabel("Move time (s):"), 5, 0)
+        self.time_spin_title = QLabel("Move time (s):")
+        grid.addWidget(self.time_spin_title, 5, 0)
         self.time_spin = QDoubleSpinBox()
-        self.time_spin.setRange(1, 10)
-        self.time_spin.setSingleStep(1)
+        self.time_spin.setRange(0.01, 10)
+        self.time_spin.setSingleStep(0.01)
         self.time_spin.setValue(5)
         grid.addWidget(self.time_spin, 5, 1)
 
@@ -202,20 +172,13 @@ class YoubotGUI(QMainWindow):
         # ----- buttons -----
         self.start_btn = QPushButton("▶ Start experiment")
         self.stop_btn = QPushButton("■ Stop experiment")
-        # self.teleop_start_btn = QPushButton("▶ Start keyboard control")
-        # self.teleop_stop_btn = QPushButton("■ Stop keyboard control")
 
         left.addWidget(self.start_btn)
         left.addWidget(self.stop_btn)
-        # left.addWidget(self.teleop_start_btn)
-        # left.addWidget(self.teleop_stop_btn)
         left.addStretch()
 
         self.start_btn.clicked.connect(self.start_experiment)
         self.stop_btn.clicked.connect(self.stop_experiment)
-        # self.teleop_start_btn.clicked.connect(self.start_teleop)
-        # self.teleop_stop_btn.clicked.connect(self.stop_teleop)
-
         # ----- mode indicator -----
         self.mode_label = QLabel("● NONE")
         self.mode_label.setAlignment(Qt.AlignCenter)
@@ -224,10 +187,6 @@ class YoubotGUI(QMainWindow):
         )
 
         left.addWidget(self.mode_label)
-
-        # self.experiment_timer = QTimer(self)
-        # self.experiment_timer.setSingleShot(True)
-        # self.experiment_timer.timeout.connect(self.finish_experiment)
 
         # ================= RIGHT: video =================
         right = QVBoxLayout()
@@ -241,7 +200,29 @@ class YoubotGUI(QMainWindow):
 
         central.setLayout(main_layout)
 
-    
+
+    def update_params(self, index):
+        if (index == 0):
+            self.reverse_title.hide()
+            self.reverse.hide()
+            self.angle_spin_title.show()
+            self.angle_spin.show()
+        else:
+            self.angle_spin_title.hide()
+            self.angle_spin.hide()
+            self.reverse.show()
+            self.reverse_title.show()
+        
+        if (index == 4 or index == 5 or index == 7):
+            self.time_spin_title.setText("Radius (m):")
+        else:
+            self.time_spin_title.setText("Move time (s):")
+
+        if (index == 6):
+            self.vel_spin_title.setText("Velocity (rad/s):")
+        else:
+            self.vel_spin_title.setText("Velocity (m/s):")
+
 
     # --------------------------------------------------
     # Video
@@ -282,11 +263,8 @@ class YoubotGUI(QMainWindow):
             QMessageBox.warning(self, "Warning", "Experiment already running")
             return
 
-        # self.stop_teleop()
-
         cmd = [
             'rosrun', 'nirs', 'youbot_control.py',
-            '--motion_type', self.motion_combo.currentText(),
             '--motion_type', self.motion_combo.currentText(),
             '--angle', str(self.angle_spin.value()),
             '--surface', self.surface_edit.text(),
@@ -315,24 +293,6 @@ class YoubotGUI(QMainWindow):
     def finish_experiment(self):
         self.control_proc = None
         self.set_mode(Mode.FINISHED)
-
-
-    # --------------------------------------------------
-    # Teleop
-    # --------------------------------------------------
-    # def start_teleop(self):
-    #     if self.control_proc:
-    #         QMessageBox.warning(
-    #             self, "Warning",
-    #             "Stop experiment before teleop"
-    #         )
-    #         return
-    #     self.teleop.start()
-    #     self.set_mode(Mode.TELEOP)
-
-    # def stop_teleop(self):
-    #     self.teleop.stop()
-    #     self.set_mode(Mode.IDLE)
 
     # --------------------------------------------------
     # Close

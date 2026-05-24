@@ -95,8 +95,6 @@ file_path = BASE_DIR / "params" / "camera_params_v2.yaml"
 config_data = read_yaml_config(file_path)
 
 if config_data:
-    # Теперь config_data - это словарь, содержащий данные из YAML
-    # print(config_data)
     name = config_data.get("camera_name")
     width = config_data.get("image_width")
     height = config_data.get("image_height")

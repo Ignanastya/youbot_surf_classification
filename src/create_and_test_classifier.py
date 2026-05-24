@@ -23,9 +23,9 @@ def task(df, cols, classifier, feature):
 
 
 if __name__ == '__main__':
-    feature = 'I_total'
+    feature = 'I_total_mean'
 
-    df = pd.read_csv(prepared_data / 'prep_experiment1.csv')
+    df = pd.read_csv(prepared_data / 'prep_new3_experiment1.csv')
 
     classifier = Classifier()
     classifier.info['primary_feature'] = feature
